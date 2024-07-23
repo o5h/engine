@@ -3,9 +3,11 @@ package main
 import (
 	"log"
 	"runtime"
+	"runtime/cgo"
 	"unsafe"
 
 	"github.com/o5h/engine/internal/opengl/egl"
+	"github.com/o5h/engine/internal/opengl/gl"
 	"github.com/o5h/engine/internal/winapi"
 	"github.com/o5h/engine/internal/winapi/kernel32"
 	"github.com/o5h/engine/internal/winapi/user32"
@@ -27,6 +29,7 @@ type context struct {
 	Context       egl.Context
 	Surface       egl.Surface
 	Display       egl.Display
+	handle        cgo.Handle
 	title         string
 	width, height int32
 	done          bool
@@ -38,11 +41,12 @@ func Create(title string, w, h int32) *context {
 		width:  w,
 		height: h,
 		done:   false}
-	ctx.createWindow()
+	ctx.handle = cgo.NewHandle(ctx)
+	ctx.createWindow(w, h)
 	return ctx
 }
 
-func (ctx *context) createWindow() {
+func (ctx *context) createWindow(w, h int32) {
 	wndproc := winapi.WNDPROC(windows.NewCallback(wndProc))
 	mh, _ := kernel32.GetModuleHandle(nil)
 	myicon, _ := user32.LoadIconW(0, user32.IDI_APPLICATION)
@@ -70,15 +74,17 @@ func (ctx *context) createWindow() {
 		user32.WS_POPUP|user32.WS_CLIPSIBLINGS|user32.WS_CLIPCHILDREN|user32.WS_OVERLAPPEDWINDOW,
 		user32.CW_USEDEFAULT,
 		user32.CW_USEDEFAULT,
-		user32.CW_USEDEFAULT,
-		user32.CW_USEDEFAULT,
+		w,
+		h,
 		winapi.HWND(0),
 		winapi.HMENU(0),
 		winapi.HINSTANCE(mh),
-		winapi.LPVOID(uintptr(unsafe.Pointer(ctx))))
+		winapi.LPVOID(ctx.handle))
 }
 
 func (ctx *context) paint() {
+	gl.ClearColor(1, 0, 1, 0)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 }
 
@@ -88,7 +94,7 @@ func (ctx *context) initialize(hWnd winapi.HWND) error {
 	dc, _ := user32.GetDC(hWnd)
 	ctx.nativeDisplay = egl.NativeDisplay(dc)
 
-	user32.SetWindowLongPtrW(hWnd, user32.GWLP_USERDATA, winapi.LONG_PTR(unsafe.Pointer(ctx)))
+	user32.SetWindowLongPtrW(hWnd, user32.GWLP_USERDATA, winapi.LONG_PTR(ctx.handle))
 
 	var err error
 
@@ -135,18 +141,20 @@ func (ctx *context) MainLoop() {
 
 func (ctx *context) destroy() {
 	user32.DestroyWindow(winapi.HWND(ctx.nativeWindow))
+	ctx.handle.Delete()
 }
 
 func wndProc(hWnd winapi.HWND, msg winapi.UINT, wParam winapi.WPARAM, lParam winapi.LPARAM) (rc winapi.LRESULT) {
 	var ctx *context
 	ptr, _ := user32.GetWindowLongPtrW(hWnd, user32.GWLP_USERDATA)
 	if ptr != 0 {
-		ctx = (*context)(unsafe.Pointer(ptr))
+		ctx = cgo.Handle(ptr).Value().(*context)
 	}
 	switch msg {
 	case user32.WM_CREATE:
 		create := (*user32.CREATESTRUCTW)(unsafe.Pointer(lParam))
-		ctx = (*context)(unsafe.Pointer(create.CreateParams))
+		ctx := cgo.Handle(create.CreateParams).Value().(*context)
+
 		err := ctx.initialize(hWnd)
 		if err != nil {
 			log.Fatal(err)

@@ -93,6 +93,7 @@ const (
 	WM_SETFONT           = winapi.UINT(0x0030)
 	WM_GETFONT           = winapi.UINT(0x0031)
 	WM_COMPAREITEM       = winapi.UINT(0x0039)
+	WM_WINDOWPOSCHANGING = winapi.UINT(0x0046)
 	WM_WINDOWPOSCHANGED  = winapi.UINT(0x0047)
 	WM_NOTIFY            = winapi.UINT(0x004E)
 	WM_NCCALCSIZE        = winapi.UINT(0x0083)

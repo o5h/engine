@@ -182,7 +182,7 @@ func CreateWindowSurface(
 	nativeWindow NativeWindow,
 	attribList []int32) (surface Surface, err error) {
 	var attribListPtr uintptr
-	if attribList != nil && len(attribList) > 0 {
+	if len(attribList) > 0 {
 		attribListPtr = uintptr(unsafe.Pointer(&attribList[0]))
 	}
 	r0, _, _ := procCreateWindowSurface.Call(
@@ -240,7 +240,7 @@ func GetCurrentSurface(readdraw int) Surface {
 	return Surface(r0)
 }
 
-func GetDisplay(display_id unsafe.Pointer /*EGLNativeDisplayType*/) Display {
+func GetDisplay(display_id NativeDisplay) Display {
 	r0, _, _ := procGetDisplay.Call(uintptr(display_id))
 	return Display(r0)
 }
@@ -530,14 +530,19 @@ func GetPlatformDisplay(
 func CreatePlatformWindowSurface(
 	display Display,
 	config Config,
-	nativeWindow unsafe.Pointer, /*void **/
-	attribList unsafe.Pointer /*const EGLAttrib **/) Surface {
+	nativeWindow NativeWindow, /*void **/
+	attribList unsafe.Pointer /*const EGLAttrib **/) (surface Surface, err error) {
 	r0, _, _ := procCreatePlatformWindowSurface.Call(
 		uintptr(display),
 		uintptr(config),
 		uintptr(nativeWindow),
 		uintptr(attribList))
-	return Surface(r0)
+
+	surface = Surface(r0)
+	if surface == NO_SURFACE {
+		return surface, GetError()
+	}
+	return surface, nil
 }
 
 func CreatePlatformPixmapSurface(
