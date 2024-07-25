@@ -24,5 +24,5 @@ func (example *Example) OnDestroy() {
 
 func main() {
 
-	app.Start(&Example{})
+	app.Start(&Example{}, app.WithTitle("Hello"))
 }
