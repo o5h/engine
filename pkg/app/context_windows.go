@@ -9,6 +9,7 @@ import (
 	"github.com/o5h/engine/internal/winapi"
 	"github.com/o5h/engine/internal/winapi/kernel32"
 	"github.com/o5h/engine/internal/winapi/user32"
+	"github.com/o5h/engine/pkg/app/input/keyboard"
 	"github.com/o5h/engine/pkg/app/input/mouse"
 	"github.com/o5h/engine/pkg/core/rx"
 	"golang.org/x/sys/windows"
@@ -27,7 +28,8 @@ type windowsContext struct {
 	Surface       egl.Surface
 	Display       egl.Display
 
-	mouseEvents rx.Subject[mouse.Event]
+	mouseEvents    rx.Subject[mouse.Event]
+	keyboardEvents rx.Subject[keyboard.Event]
 
 	handle cgo.Handle
 	done   chan struct{}
@@ -37,15 +39,20 @@ func (ctx *windowsContext) MouseEvents() rx.Subject[mouse.Event] {
 	return ctx.mouseEvents
 }
 
+func (ctx *windowsContext) KeyboardEvents() rx.Subject[keyboard.Event] {
+	return ctx.keyboardEvents
+}
+
 func (ctx *windowsContext) Done() {
 	ctx.done <- struct{}{}
 }
 
 func newContext(app Application, cfg *Config) *windowsContext {
 	ctx := &windowsContext{
-		app:         app,
-		done:        make(chan struct{}, 1),
-		mouseEvents: rx.NewSubject[mouse.Event](),
+		app:            app,
+		done:           make(chan struct{}, 1),
+		mouseEvents:    rx.NewSubject[mouse.Event](),
+		keyboardEvents: rx.NewSubject[keyboard.Event](),
 	}
 	ctx.handle = cgo.NewHandle(ctx)
 	ctx.createWindow(cfg)
@@ -146,6 +153,18 @@ func (ctx *windowsContext) mainLoop() {
 	}
 
 }
+func (ctx *windowsContext) onKey(msg winapi.UINT, wParam winapi.WPARAM, lParam winapi.LPARAM) {
+	code := WindowsVKToCode(wParam)
+	r := rune(user32.MapVirtualKeyW(winapi.UINT(wParam), user32.MAPVK_VK_TO_CHAR))
+	var dir = keyboard.Press
+	switch msg {
+	case user32.WM_KEYDOWN:
+		dir = keyboard.Press
+	case user32.WM_KEYUP:
+		dir = keyboard.Release
+	}
+	go ctx.keyboardEvents.Next(keyboard.Event{Direction: dir, Code: code, Rune: r})
+}
 
 func (ctx *windowsContext) onMouse(hWnd winapi.HWND, msg winapi.UINT, lParam winapi.LPARAM) {
 
@@ -196,9 +215,7 @@ func wndProc(hWnd winapi.HWND, msg winapi.UINT, wParam winapi.WPARAM, lParam win
 		user32.PostQuitMessage(0)
 
 	case user32.WM_KEYDOWN, user32.WM_KEYUP:
-		if wParam == user32.VK_ESCAPE {
-			ctx.Done()
-		}
+		ctx.onKey(msg, wParam, lParam)
 
 	case user32.WM_LBUTTONDOWN, user32.WM_LBUTTONUP, user32.WM_MOUSEMOVE:
 		ctx.onMouse(hWnd, msg, lParam)

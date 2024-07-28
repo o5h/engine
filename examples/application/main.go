@@ -6,6 +6,7 @@ import (
 
 	"github.com/o5h/engine/internal/opengl/gl"
 	"github.com/o5h/engine/pkg/app"
+	"github.com/o5h/engine/pkg/app/input/keyboard"
 	"github.com/o5h/engine/pkg/app/input/mouse"
 	"github.com/o5h/engine/pkg/core/rx"
 )
@@ -14,9 +15,16 @@ type Example struct{}
 
 func (example *Example) OnCreate(ctx app.Context) {
 	log.Println("Created")
-	ctx.MouseEvents().Subscribe(rx.NewObserver[mouse.Event](
+	ctx.MouseEvents().Subscribe(rx.NewObserver(
 		func(e mouse.Event) {
 			fmt.Println(e)
+		}, nil, nil))
+	ctx.KeyboardEvents().Subscribe(rx.NewObserver(
+		func(e keyboard.Event) {
+			fmt.Println(e)
+			if e.Code == keyboard.Escape {
+				ctx.Done()
+			}
 		}, nil, nil))
 }
 
