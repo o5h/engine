@@ -8,19 +8,17 @@ import (
 )
 
 func main() {
-	observable := rx.NewObservable(func(s rx.Observer[string]) {
-		s.Next("Hello")
-		time.Sleep(3 * time.Second)
-		s.Next("World")
-		time.Sleep(1 * time.Second)
-		s.Complete()
-	})
+	observable := rx.NewSubject[string]()
+	observable.Next("Hello")
 	sub := observable.Subscribe(rx.NewObserver(func(s string) {
 		log.Println(s)
 	}, nil, func() {
 		log.Println("Complete")
 	}))
+	observable.Next("World")
 	time.Sleep(2 * time.Second)
+	observable.Complete()
 	sub.Unsubscribe()
+	observable.Next("!")
 	time.Sleep(4 * time.Second)
 }

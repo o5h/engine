@@ -25,6 +25,12 @@ type Subscription interface {
 }
 
 type BehaviorSubject[T any] interface {
-	// Subject[T]
+	Subject[T]
 	Value() T
+}
+
+type Subject[T any] interface {
+	Observable[T]
+	Observer[T]
+	Subscription
 }
