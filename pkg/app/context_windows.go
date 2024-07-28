@@ -9,6 +9,8 @@ import (
 	"github.com/o5h/engine/internal/winapi"
 	"github.com/o5h/engine/internal/winapi/kernel32"
 	"github.com/o5h/engine/internal/winapi/user32"
+	"github.com/o5h/engine/pkg/app/input/mouse"
+	"github.com/o5h/engine/pkg/core/rx"
 	"golang.org/x/sys/windows"
 )
 
@@ -25,8 +27,14 @@ type windowsContext struct {
 	Surface       egl.Surface
 	Display       egl.Display
 
+	mouseEvents rx.Subject[mouse.Event]
+
 	handle cgo.Handle
 	done   chan struct{}
+}
+
+func (ctx *windowsContext) MouseEvents() rx.Subject[mouse.Event] {
+	return ctx.mouseEvents
 }
 
 func (ctx *windowsContext) Done() {
@@ -35,8 +43,9 @@ func (ctx *windowsContext) Done() {
 
 func newContext(app Application, cfg *Config) *windowsContext {
 	ctx := &windowsContext{
-		app:  app,
-		done: make(chan struct{}, 1),
+		app:         app,
+		done:        make(chan struct{}, 1),
+		mouseEvents: rx.NewSubject[mouse.Event](),
 	}
 	ctx.handle = cgo.NewHandle(ctx)
 	ctx.createWindow(cfg)
@@ -112,8 +121,10 @@ func (ctx *windowsContext) onDestroy() {
 	ctx.app.OnDestroy()
 	ctx.handle.Delete()
 }
+
 func (ctx *windowsContext) onResize(w, h int32) {
 }
+
 func (ctx *windowsContext) onPaint() {
 	ctx.app.OnUpdate(0)
 }
@@ -136,12 +147,31 @@ func (ctx *windowsContext) mainLoop() {
 
 }
 
+func (ctx *windowsContext) onMouse(hWnd winapi.HWND, msg winapi.UINT, lParam winapi.LPARAM) {
+
+	var action mouse.Action
+	var btn mouse.Button
+	x := int(winapi.GET_X_LPARAM(lParam))
+	y := int(winapi.GET_Y_LPARAM(lParam))
+
+	switch msg {
+	case user32.WM_LBUTTONDOWN:
+		action = mouse.ActionPress
+		btn = mouse.ButtonLeft
+	case user32.WM_RBUTTONDOWN:
+		action = mouse.ActionPress
+		btn = mouse.ButtonLeft
+	}
+	go ctx.mouseEvents.Next(mouse.Event{Action: action, X: x, Y: y, Button: btn})
+}
+
 func wndProc(hWnd winapi.HWND, msg winapi.UINT, wParam winapi.WPARAM, lParam winapi.LPARAM) (rc winapi.LRESULT) {
 	var ctx *windowsContext
 	if ptr, _ := user32.GetWindowLongPtrW(hWnd, user32.GWLP_USERDATA); ptr != 0 {
 		ctx = cgo.Handle(ptr).Value().(*windowsContext)
 	}
 	switch msg {
+
 	case user32.WM_CREATE:
 		create := (*user32.CREATESTRUCTW)(unsafe.Pointer(lParam))
 		ctx := cgo.Handle(create.CreateParams).Value().(*windowsContext)
@@ -149,21 +179,30 @@ func wndProc(hWnd winapi.HWND, msg winapi.UINT, wParam winapi.WPARAM, lParam win
 		if err != nil {
 			log.Fatal(err)
 		}
+
 	case user32.WM_PAINT:
 		ctx.onPaint()
 		egl.SwapBuffers(ctx.Display, ctx.Surface)
+
 	case user32.WM_SIZE:
 		w := int32(winapi.LOWORD(winapi.DWORD(lParam)))
 		h := int32(winapi.HIWORD(winapi.DWORD(lParam)))
 		ctx.onResize(w, h)
+
 	case user32.WM_CLOSE:
 		ctx.Done()
+
 	case user32.WM_DESTROY:
 		user32.PostQuitMessage(0)
+
 	case user32.WM_KEYDOWN, user32.WM_KEYUP:
 		if wParam == user32.VK_ESCAPE {
 			ctx.Done()
 		}
+
+	case user32.WM_LBUTTONDOWN, user32.WM_LBUTTONUP, user32.WM_MOUSEMOVE:
+		ctx.onMouse(hWnd, msg, lParam)
+
 	default:
 		rc = user32.DefWindowProcW(hWnd, msg, wParam, lParam)
 	}
