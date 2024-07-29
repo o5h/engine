@@ -167,21 +167,25 @@ func (ctx *windowsContext) onKey(msg winapi.UINT, wParam winapi.WPARAM, lParam w
 }
 
 func (ctx *windowsContext) onMouse(hWnd winapi.HWND, msg winapi.UINT, lParam winapi.LPARAM) {
-
 	var action mouse.Action
 	var btn mouse.Button
 	x := int(winapi.GET_X_LPARAM(lParam))
 	y := int(winapi.GET_Y_LPARAM(lParam))
 
 	switch msg {
+	case user32.WM_MOUSEMOVE:
+		action = mouse.ActionNone
+		btn = mouse.ButtonNone
 	case user32.WM_LBUTTONDOWN:
 		action = mouse.ActionPress
 		btn = mouse.ButtonLeft
 	case user32.WM_RBUTTONDOWN:
 		action = mouse.ActionPress
 		btn = mouse.ButtonLeft
+	default:
+		log.Println("mouse", msg)
 	}
-	go ctx.mouseEvents.Next(mouse.Event{Action: action, X: x, Y: y, Button: btn})
+	ctx.mouseEvents.Next(mouse.Event{Action: action, X: x, Y: y, Button: btn})
 }
 
 func wndProc(hWnd winapi.HWND, msg winapi.UINT, wParam winapi.WPARAM, lParam winapi.LPARAM) (rc winapi.LRESULT) {

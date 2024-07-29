@@ -11,19 +11,39 @@ import (
 	"github.com/o5h/engine/pkg/core/rx"
 )
 
-type Example struct{}
+type Example struct {
+	mouseSubscription rx.Subscription
+}
 
 func (example *Example) OnCreate(ctx app.Context) {
 	log.Println("Created")
-	ctx.MouseEvents().Subscribe(rx.NewObserver(
+
+	example.mouseSubscription = ctx.MouseEvents().Subscribe(rx.NewObserver(
 		func(e mouse.Event) {
 			fmt.Println(e)
 		}, nil, nil))
+
+	eventToAction := rx.Map(func(e mouse.Event) mouse.Action { return e.Action })
+	rx.Pipe[mouse.Event, mouse.Action]{
+		A:  ctx.MouseEvents(),
+		AB: eventToAction,
+	}.Subscribe(rx.NewObserver(func(a mouse.Action) {
+		log.Println(a)
+	}, nil, nil))
+
+	// rx.Map(func(e mouse.Event) bool { return e.Action == mouse.ActionPress })(ctx.MouseEvents()).
+	// Subscribe(func ()  {
+
+	// })
+
 	ctx.KeyboardEvents().Subscribe(rx.NewObserver(
 		func(e keyboard.Event) {
 			fmt.Println(e)
 			if e.Code == keyboard.Escape {
 				ctx.Done()
+			}
+			if e.Code == keyboard.Code1 {
+				example.mouseSubscription.Unsubscribe()
 			}
 		}, nil, nil))
 }
