@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"time"
 
 	"github.com/o5h/engine/internal/opengl/gl"
 	"github.com/o5h/engine/pkg/app"
@@ -12,40 +12,33 @@ import (
 )
 
 type Example struct {
-	mouseSubscription rx.Subscription
+	keyboardSubscription *rx.Subscription
+	mouseSubscription    *rx.Subscription
 }
 
 func (example *Example) OnCreate(ctx app.Context) {
 	log.Println("Created")
 
-	example.mouseSubscription = ctx.MouseEvents().Subscribe(rx.NewObserver(
-		func(e mouse.Event) {
-			fmt.Println(e)
-		}, nil, nil))
+	example.keyboardSubscription = ctx.KeyboardEvents().OnNext(func(e keyboard.Event) {
+		// log.Println(e)
+		if e.Code == keyboard.Code1 {
+			example.mouseSubscription.Unsubscribe()
+		}
+	})
+	example.mouseSubscription = ctx.MouseEvents().Subscribe(func(e mouse.Event, b bool, err error) {
+		//log.Println(e)
+	})
 
-	eventToAction := rx.Map(func(e mouse.Event) mouse.Action { return e.Action })
-	rx.Pipe[mouse.Event, mouse.Action]{
-		A:  ctx.MouseEvents(),
-		AB: eventToAction,
-	}.Subscribe(rx.NewObserver(func(a mouse.Action) {
-		log.Println(a)
-	}, nil, nil))
-
-	// rx.Map(func(e mouse.Event) bool { return e.Action == mouse.ActionPress })(ctx.MouseEvents()).
-	// Subscribe(func ()  {
-
-	// })
-
-	ctx.KeyboardEvents().Subscribe(rx.NewObserver(
-		func(e keyboard.Event) {
-			fmt.Println(e)
-			if e.Code == keyboard.Escape {
-				ctx.Done()
-			}
-			if e.Code == keyboard.Code1 {
-				example.mouseSubscription.Unsubscribe()
-			}
-		}, nil, nil))
+	rx.NewObservable(func(o rx.Observer[string]) {
+		o("hello", false, nil)
+		time.Sleep(1 * time.Second)
+		o("world", false, nil)
+		time.Sleep(1 * time.Second)
+		o("!!!!!!!!!!!", false, nil)
+		o("", true, nil)
+	}).Subscribe(func(s string, b bool, err error) {
+		log.Println(s)
+	})
 }
 
 func (example *Example) OnUpdate(deltaTime float32) {

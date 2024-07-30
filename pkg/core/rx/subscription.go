@@ -1,27 +1,16 @@
 package rx
 
-func NewSubscription(complete func()) Subscription {
-	return &subscription{
-		closed:   false,
-		complete: complete}
+type Subscription struct {
+	callbacks []func()
 }
 
-type subscription struct {
-	closed   bool
-	complete func()
-}
-
-func (sub *subscription) IsClosed() bool {
-	return sub.closed
-}
-
-func (sub *subscription) Unsubscribe() {
-	if sub.closed {
-		return
+func (s *Subscription) Unsubscribe() {
+	for _, fn := range s.callbacks {
+		fn()
 	}
-	if sub.complete == nil {
-		return
-	}
-	sub.complete()
-	sub.closed = true
+	s.callbacks = nil
+}
+
+func newSubscription(fn func()) *Subscription {
+	return &Subscription{callbacks: []func(){fn}}
 }

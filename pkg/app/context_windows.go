@@ -35,12 +35,12 @@ type windowsContext struct {
 	done   chan struct{}
 }
 
-func (ctx *windowsContext) MouseEvents() rx.Subject[mouse.Event] {
-	return ctx.mouseEvents
+func (ctx *windowsContext) MouseEvents() *rx.Subject[mouse.Event] {
+	return &ctx.mouseEvents
 }
 
-func (ctx *windowsContext) KeyboardEvents() rx.Subject[keyboard.Event] {
-	return ctx.keyboardEvents
+func (ctx *windowsContext) KeyboardEvents() *rx.Subject[keyboard.Event] {
+	return &ctx.keyboardEvents
 }
 
 func (ctx *windowsContext) Done() {
@@ -49,10 +49,8 @@ func (ctx *windowsContext) Done() {
 
 func newContext(app Application, cfg *Config) *windowsContext {
 	ctx := &windowsContext{
-		app:            app,
-		done:           make(chan struct{}, 1),
-		mouseEvents:    rx.NewSubject[mouse.Event](),
-		keyboardEvents: rx.NewSubject[keyboard.Event](),
+		app:  app,
+		done: make(chan struct{}, 1),
 	}
 	ctx.handle = cgo.NewHandle(ctx)
 	ctx.createWindow(cfg)
@@ -163,7 +161,7 @@ func (ctx *windowsContext) onKey(msg winapi.UINT, wParam winapi.WPARAM, lParam w
 	case user32.WM_KEYUP:
 		dir = keyboard.Release
 	}
-	go ctx.keyboardEvents.Next(keyboard.Event{Direction: dir, Code: code, Rune: r})
+	go ctx.keyboardEvents.Next(keyboard.Event{Direction: dir, Code: code, Rune: r}, false, nil)
 }
 
 func (ctx *windowsContext) onMouse(hWnd winapi.HWND, msg winapi.UINT, lParam winapi.LPARAM) {
@@ -185,7 +183,7 @@ func (ctx *windowsContext) onMouse(hWnd winapi.HWND, msg winapi.UINT, lParam win
 	default:
 		log.Println("mouse", msg)
 	}
-	ctx.mouseEvents.Next(mouse.Event{Action: action, X: x, Y: y, Button: btn})
+	ctx.mouseEvents.Next(mouse.Event{Action: action, X: x, Y: y, Button: btn}, false, nil)
 }
 
 func wndProc(hWnd winapi.HWND, msg winapi.UINT, wParam winapi.WPARAM, lParam winapi.LPARAM) (rc winapi.LRESULT) {

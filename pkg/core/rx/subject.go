@@ -2,54 +2,34 @@ package rx
 
 import "slices"
 
-type subject[T any] struct {
-	closed    bool
-	observers []Observer[T]
+type Subject[T any] struct {
+	observers []*observer[T]
 }
 
-func NewSubject[T any]() Subject[T] {
-	return &subject[T]{}
+func (s *Subject[T]) OnNext(fn func(T)) *Subscription {
+	return s.Subscribe(func(t T, b bool, err error) { fn(t) })
 }
 
-func (s *subject[T]) IsClosed() bool {
-	return s.closed
-}
-
-func (s *subject[T]) Subscribe(dest Observer[T]) Subscription {
-	s.append(dest)
-	return NewSubscription(func() {
-		s.remove(dest)
+func (s *Subject[T]) Subscribe(dest Observer[T]) *Subscription {
+	observer := &observer[T]{Observer: dest}
+	s.append(observer)
+	return newSubscription(func() {
+		s.remove(observer)
 	})
 }
 
-func (s *subject[T]) append(dest Observer[T]) {
+func (s *Subject[T]) Next(v T, complete bool, err error) {
+	for _, o := range s.observers {
+		o.Observer(v, complete, err)
+	}
+}
+
+func (s *Subject[T]) append(dest *observer[T]) {
 	s.observers = append(s.observers, dest)
 }
 
-func (s *subject[T]) remove(dest Observer[T]) {
-	s.observers = slices.DeleteFunc(s.observers, func(v Observer[T]) bool {
+func (s *Subject[T]) remove(dest *observer[T]) {
+	s.observers = slices.DeleteFunc(s.observers, func(v *observer[T]) bool {
 		return v == dest
 	})
-}
-
-func (s *subject[T]) Unsubscribe() {
-
-}
-
-func (s *subject[T]) Next(value T) {
-	for _, observer := range s.observers {
-		observer.Next(value)
-	}
-}
-
-func (s *subject[T]) Error(err error) {
-	for _, observer := range s.observers {
-		observer.Error(err)
-	}
-}
-
-func (s *subject[T]) Complete() {
-	for _, observer := range s.observers {
-		observer.Complete()
-	}
 }

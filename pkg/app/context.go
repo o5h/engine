@@ -8,6 +8,6 @@ import (
 
 type Context interface {
 	Done()
-	MouseEvents() rx.Subject[mouse.Event]
-	KeyboardEvents() rx.Subject[keyboard.Event]
+	MouseEvents() *rx.Subject[mouse.Event]
+	KeyboardEvents() *rx.Subject[keyboard.Event]
 }
