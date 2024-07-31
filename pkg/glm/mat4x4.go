@@ -1,14 +1,9 @@
-package mat4x4
+package glm
 
 import (
 	"errors"
 	"fmt"
-
-	"github.com/o5h/engine/pkg/math/f32/mat3x3"
-	"github.com/o5h/engine/pkg/math/f32/math"
-	"github.com/o5h/engine/pkg/math/f32/quat"
-	"github.com/o5h/engine/pkg/math/f32/transform3d"
-	"github.com/o5h/engine/pkg/math/f32/vec3"
+	"unsafe"
 )
 
 //  | 0  4  8  12 |
@@ -18,12 +13,17 @@ import (
 
 type Mat4x4 [16]float32
 
-var Ident = Mat4x4{
-	1, 0, 0, 0,
-	0, 1, 0, 0,
-	0, 0, 1, 0,
-	0, 0, 0, 1}
+var (
+	Ident = Mat4x4{
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1}
+)
 
+func (m *Mat4x4) Ptr() uintptr {
+	return uintptr(unsafe.Pointer(&m[0]))
+}
 func (m Mat4x4) SetIdentity() {
 	m[0] = 1
 	m[1] = 0
@@ -46,14 +46,14 @@ func (m Mat4x4) SetIdentity() {
 	m[15] = 1
 }
 
-func (m *Mat4x4) LookAt(eye, target, up *vec3.Vec3) {
+func (m *Mat4x4) LookAt(eye, target, up Vec3) {
 
 	fx := target.X - eye.X
 	fy := target.Y - eye.Y
 	fz := target.Z - eye.Z
 
 	// Normalize f
-	rlf := 1.0 / math.LengthXYZ(fx, fy, fz)
+	rlf := 1.0 / LengthXYZ(fx, fy, fz)
 	fx *= rlf
 	fy *= rlf
 	fz *= rlf
@@ -64,7 +64,7 @@ func (m *Mat4x4) LookAt(eye, target, up *vec3.Vec3) {
 	sz := fx*up.Y - fy*up.X
 
 	// and normalize s
-	rls := 1.0 / math.LengthXYZ(sx, sy, sz)
+	rls := 1.0 / LengthXYZ(sx, sy, sz)
 	sx *= rls
 	sy *= rls
 	sz *= rls
@@ -109,7 +109,7 @@ func (m *Mat4x4) TranslateXYZ(x, y, z float32) {
 }
 
 func (m *Mat4x4) Perspective(zNear, zFar, fovy, aspect float32) {
-	f := 1.0 / math.Tan(fovy*(math.Pi/360.0))
+	f := 1.0 / Tan(fovy*(Pi/360.0))
 	rangeReciprocal := 1.0 / (zNear - zFar)
 
 	m[0] = f / aspect
@@ -183,7 +183,7 @@ func (m *Mat4x4) Ortho(left, right, bottom, top, near, far float32) {
 }
 
 func (m *Mat4x4) SetRotateX(radians float32) {
-	s, c := math.SinCos(radians)
+	s, c := SinCos(radians)
 
 	m[0] = 1
 	m[1] = 0
@@ -207,7 +207,7 @@ func (m *Mat4x4) SetRotateX(radians float32) {
 }
 
 func (m *Mat4x4) SetRotateY(radians float32) {
-	s, c := math.SinCos(radians)
+	s, c := SinCos(radians)
 
 	m[0] = c
 	m[1] = 0
@@ -231,7 +231,7 @@ func (m *Mat4x4) SetRotateY(radians float32) {
 }
 
 func (m *Mat4x4) SetRotateZ(radians float32) {
-	s, c := math.SinCos(radians)
+	s, c := SinCos(radians)
 
 	m[0] = c
 	m[1] = -s
@@ -255,8 +255,8 @@ func (m *Mat4x4) SetRotateZ(radians float32) {
 }
 
 // Transform Order is : Scale, Rotate, Translate
-func (m *Mat4x4) SetTransform(t *transform3d.Transform3d) {
-	rot := mat3x3.Mat3x3{}
+func (m *Mat4x4) SetTransform(t *Transform) {
+	rot := Mat3x3{}
 	rot.SetFormEulerXYZ(t.Rotation.X, t.Rotation.Y, t.Rotation.Z)
 
 	m[0] = t.Scale.X * rot[0]
@@ -281,8 +281,8 @@ func (m *Mat4x4) SetTransform(t *transform3d.Transform3d) {
 
 }
 
-func (m *Mat4x4) Transform2(location *vec3.Vec3, scale *vec3.Vec3, orient *quat.Quat) {
-	rot := mat3x3.Mat3x3{}
+func (m *Mat4x4) Transform2(location *Vec3, scale *Vec3, orient *Quat) {
+	rot := Mat3x3{}
 	rot.FromQuaternion(orient)
 
 	// Ordering:
@@ -313,7 +313,7 @@ func (m *Mat4x4) Transform2(location *vec3.Vec3, scale *vec3.Vec3, orient *quat.
 	m[15] = 1
 }
 
-func (m *Mat4x4) SetMul(m1, m2 *Mat4x4) {
+func (m *Mat4x4) SetMul(m1, m2 Mat4x4) {
 	m[0] = m1[0]*m2[0] + m1[4]*m2[1] + m1[8]*m2[2] + m1[12]*m2[3]
 	m[1] = m1[1]*m2[0] + m1[5]*m2[1] + m1[9]*m2[2] + m1[13]*m2[3]
 	m[2] = m1[2]*m2[0] + m1[6]*m2[1] + m1[10]*m2[2] + m1[14]*m2[3]
@@ -411,8 +411,8 @@ func (m *Mat4x4) CopyInverseFrom(src *Mat4x4) error {
 	return nil
 }
 
-func (m *Mat4x4) MulVec4(v quat.Quat) quat.Quat {
-	return quat.Quat{
+func (m *Mat4x4) MulVec4(v Vec4) Vec4 {
+	return Vec4{
 		X: m[0]*v.X + m[4]*v.Y + m[8]*v.Z + m[12]*v.W,
 		Y: m[1]*v.X + m[5]*v.Y + m[9]*v.Z + m[13]*v.W,
 		Z: m[2]*v.X + m[6]*v.Y + m[10]*v.Z + m[14]*v.W,

@@ -1,47 +1,40 @@
-package quat
-
-import (
-	"github.com/o5h/engine/pkg/math/f32/math"
-	"github.com/o5h/engine/pkg/math/f32/vec3"
-)
+package glm
 
 type Quat struct {
 	X, Y, Z, W float32
 }
 
-func ZeroQuat() *Quat {
-	return &Quat{0, 0, 0, 1}
-}
+func ZeroQuat() *Quat { return &Quat{0, 0, 0, 1} }
 
 func (q *Quat) ToEuler() (yaw, pitch, roll float32) {
 	sqw := q.W * q.W
 	sqx := q.X * q.X
 	sqy := q.Y * q.Y
 	sqz := q.Z * q.Z
-	unit := sqx + sqy + sqz + sqw // if normalized is one, otherwise is correction factor
+	unit := sqx + sqy + sqz + sqw // if normalised is one, otherwise is correction factor
 	test := q.X*q.Y + q.Z*q.W
 	if test > 0.499*unit { // singularity at north pole
-		yaw = 2 * math.Atan2(q.X, q.W)
-		pitch = math.Pi * 0.5
+		yaw = 2 * Atan2(q.X, q.W)
+		pitch = Pi * 0.5
 		roll = 0
 		return
 	}
 	if test < -0.499*unit { // singularity at south pole
-		yaw = -2 * math.Atan2(q.X, q.W)
-		pitch = -math.Pi * 0.5
+		yaw = -2 * Atan2(q.X, q.W)
+		pitch = -Pi * 0.5
 		roll = 0
 		return
 	}
-	yaw = math.Atan2(2*q.Y*q.W-2*q.X*q.Z, sqx-sqy-sqz+sqw)
-	pitch = math.Asin(2 * test / unit)
-	roll = math.Atan2(2*q.X*q.W-2*q.Y*q.Z, -sqx+sqy-sqz+sqw)
+	yaw = Atan2(2*q.Y*q.W-2*q.X*q.Z, sqx-sqy-sqz+sqw)
+	pitch = Asin(2 * test / unit)
+	roll = Atan2(2*q.X*q.W-2*q.Y*q.Z, -sqx+sqy-sqz+sqw)
 	return
 }
 
 func (q *Quat) FromEulerXYZ(x, y, z float32) {
-	sinYaw, cosYaw := math.SinCos(x * 0.5)
-	s2, c2 := math.SinCos(y * 0.5)
-	s3, c3 := math.SinCos(z * 0.5)
+	sinYaw, cosYaw := SinCos(x * 0.5)
+	s2, c2 := SinCos(y * 0.5)
+	s3, c3 := SinCos(z * 0.5)
 
 	c1c2 := cosYaw * c2
 	s1s2 := sinYaw * s2
@@ -53,9 +46,9 @@ func (q *Quat) FromEulerXYZ(x, y, z float32) {
 }
 
 func (q *Quat) SetEulerXYZ(x, y, z float32) {
-	sZ, cZ := math.SinCos(z * 0.5)
-	sY, cY := math.SinCos(y * 0.5)
-	sX, cX := math.SinCos(x * 0.5)
+	sZ, cZ := SinCos(z * 0.5)
+	sY, cY := SinCos(y * 0.5)
+	sX, cX := SinCos(x * 0.5)
 	cXsY := cX * sY
 	sXcY := sX * cY
 	cXcY := cX * cY
@@ -67,7 +60,7 @@ func (q *Quat) SetEulerXYZ(x, y, z float32) {
 	q.W = (cXcY * cZ) + (sXSy * sZ)
 }
 
-func (q *Quat) FromEuler(v *vec3.Vec3) {
+func (q *Quat) FromEuler(v *Vec3) {
 	q.FromEulerXYZ(v.X, v.Y, v.Z)
 }
 
@@ -107,7 +100,7 @@ func (q *Quat) SetSum(a, b *Quat) {
 }
 
 func (q *Quat) Normalize() {
-	f := 1.0 / math.Sqrt(q.X*q.X+q.Y*q.Y+q.Z*q.Z+q.W*q.W)
+	f := 1.0 / Sqrt(q.X*q.X+q.Y*q.Y+q.Z*q.Z+q.W*q.W)
 	q.X *= f
 	q.Y *= f
 	q.Z *= f
