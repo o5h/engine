@@ -3,11 +3,11 @@ package app
 import (
 	"github.com/o5h/engine/pkg/app/input/keyboard"
 	"github.com/o5h/engine/pkg/app/input/mouse"
-	"github.com/o5h/engine/pkg/core/rx"
+	"github.com/o5h/engine/pkg/core/signal"
 )
 
 type Context interface {
 	Done()
-	MouseEvents() *rx.Subject[mouse.Event]
-	KeyboardEvents() *rx.Subject[keyboard.Event]
+	MouseEvents() *signal.Signal[mouse.Event]
+	KeyboardEvents() *signal.Signal[keyboard.Event]
 }

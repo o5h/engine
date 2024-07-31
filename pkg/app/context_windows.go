@@ -11,7 +11,7 @@ import (
 	"github.com/o5h/engine/internal/winapi/user32"
 	"github.com/o5h/engine/pkg/app/input/keyboard"
 	"github.com/o5h/engine/pkg/app/input/mouse"
-	"github.com/o5h/engine/pkg/core/rx"
+	"github.com/o5h/engine/pkg/core/signal"
 	"golang.org/x/sys/windows"
 )
 
@@ -28,18 +28,18 @@ type windowsContext struct {
 	Surface       egl.Surface
 	Display       egl.Display
 
-	mouseEvents    rx.Subject[mouse.Event]
-	keyboardEvents rx.Subject[keyboard.Event]
+	mouseEvents    signal.Signal[mouse.Event]
+	keyboardEvents signal.Signal[keyboard.Event]
 
 	handle cgo.Handle
 	done   chan struct{}
 }
 
-func (ctx *windowsContext) MouseEvents() *rx.Subject[mouse.Event] {
+func (ctx *windowsContext) MouseEvents() *signal.Signal[mouse.Event] {
 	return &ctx.mouseEvents
 }
 
-func (ctx *windowsContext) KeyboardEvents() *rx.Subject[keyboard.Event] {
+func (ctx *windowsContext) KeyboardEvents() *signal.Signal[keyboard.Event] {
 	return &ctx.keyboardEvents
 }
 
@@ -161,7 +161,7 @@ func (ctx *windowsContext) onKey(msg winapi.UINT, wParam winapi.WPARAM, lParam w
 	case user32.WM_KEYUP:
 		dir = keyboard.Release
 	}
-	go ctx.keyboardEvents.Next(keyboard.Event{Direction: dir, Code: code, Rune: r}, false, nil)
+	go ctx.keyboardEvents.Next(keyboard.Event{Direction: dir, Code: code, Rune: r})
 }
 
 func (ctx *windowsContext) onMouse(hWnd winapi.HWND, msg winapi.UINT, lParam winapi.LPARAM) {
@@ -183,7 +183,7 @@ func (ctx *windowsContext) onMouse(hWnd winapi.HWND, msg winapi.UINT, lParam win
 	default:
 		log.Println("mouse", msg)
 	}
-	ctx.mouseEvents.Next(mouse.Event{Action: action, X: x, Y: y, Button: btn}, false, nil)
+	ctx.mouseEvents.Next(mouse.Event{Action: action, X: x, Y: y, Button: btn})
 }
 
 func wndProc(hWnd winapi.HWND, msg winapi.UINT, wParam winapi.WPARAM, lParam winapi.LPARAM) (rc winapi.LRESULT) {

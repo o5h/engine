@@ -2,43 +2,32 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"github.com/o5h/engine/internal/opengl/gl"
 	"github.com/o5h/engine/pkg/app"
 	"github.com/o5h/engine/pkg/app/input/keyboard"
 	"github.com/o5h/engine/pkg/app/input/mouse"
-	"github.com/o5h/engine/pkg/core/rx"
+	"github.com/o5h/engine/pkg/core/signal"
 )
 
 type Example struct {
-	keyboardSubscription *rx.Subscription
-	mouseSubscription    *rx.Subscription
+	keyboardCon *signal.Connection[keyboard.Event]
+	mouseCon    *signal.Connection[mouse.Event]
 }
 
 func (example *Example) OnCreate(ctx app.Context) {
 	log.Println("Created")
 
-	example.keyboardSubscription = ctx.KeyboardEvents().OnNext(func(e keyboard.Event) {
-		// log.Println(e)
+	example.keyboardCon = ctx.KeyboardEvents().Connect(func(e keyboard.Event) {
+		log.Println(e)
 		if e.Code == keyboard.Code1 {
-			example.mouseSubscription.Unsubscribe()
+			example.mouseCon.Disconnect()
 		}
 	})
-	example.mouseSubscription = ctx.MouseEvents().Subscribe(func(e mouse.Event, b bool, err error) {
-		//log.Println(e)
+	example.mouseCon = ctx.MouseEvents().Connect(func(e mouse.Event) {
+		log.Println(e)
 	})
 
-	rx.NewObservable(func(o rx.Observer[string]) {
-		o("hello", false, nil)
-		time.Sleep(1 * time.Second)
-		o("world", false, nil)
-		time.Sleep(1 * time.Second)
-		o("!!!!!!!!!!!", false, nil)
-		o("", true, nil)
-	}).Subscribe(func(s string, b bool, err error) {
-		log.Println(s)
-	})
 }
 
 func (example *Example) OnUpdate(deltaTime float32) {
