@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/o5h/engine/internal/opengl/gl"
 	"github.com/o5h/engine/pkg/app"
 	"github.com/o5h/engine/pkg/app/input/keyboard"
 	"github.com/o5h/engine/pkg/app/input/mouse"
 	"github.com/o5h/engine/pkg/core/signal"
+	"github.com/o5h/opengles/gl"
 )
 
 type Example struct {

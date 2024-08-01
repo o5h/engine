@@ -1,6 +1,6 @@
 package glx
 
-import "github.com/o5h/engine/pkg/glm"
+import "github.com/o5h/glm"
 
 type Vertex struct {
 	Position glm.Vec3

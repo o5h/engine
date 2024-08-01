@@ -3,8 +3,8 @@ package glx
 import (
 	"log"
 
-	"github.com/o5h/engine/internal/opengl/gl"
-	"github.com/o5h/engine/pkg/glm"
+	"github.com/o5h/glm"
+	"github.com/o5h/opengles/gl"
 )
 
 type Uniforms struct {

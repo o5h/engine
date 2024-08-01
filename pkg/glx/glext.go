@@ -1,6 +1,6 @@
 package glx
 
-import "github.com/o5h/engine/internal/opengl/gl"
+import "github.com/o5h/opengles/gl"
 
 type BufferUsage int
 type DrawMode uint32

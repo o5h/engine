@@ -3,7 +3,7 @@ package glx
 import (
 	"unsafe"
 
-	"github.com/o5h/engine/internal/opengl/gl"
+	"github.com/o5h/opengles/gl"
 )
 
 type Component interface {

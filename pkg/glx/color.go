@@ -3,7 +3,7 @@ package glx
 import (
 	"math/rand"
 
-	"github.com/o5h/engine/pkg/glm"
+	"github.com/o5h/glm"
 )
 
 type RGB uint32

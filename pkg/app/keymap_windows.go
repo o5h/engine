@@ -3,9 +3,9 @@ package app
 import (
 	"log"
 
-	"github.com/o5h/engine/internal/winapi"
-	"github.com/o5h/engine/internal/winapi/user32"
 	"github.com/o5h/engine/pkg/app/input/keyboard"
+	"github.com/o5h/winapi"
+	"github.com/o5h/winapi/user32"
 )
 
 func WindowsVKToCode(vk winapi.WPARAM) keyboard.Code {
