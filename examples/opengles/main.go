@@ -6,11 +6,11 @@ import (
 	"runtime/cgo"
 	"unsafe"
 
-	"github.com/o5h/engine/internal/winapi"
-	"github.com/o5h/engine/internal/winapi/kernel32"
-	"github.com/o5h/engine/internal/winapi/user32"
 	"github.com/o5h/opengles/egl"
 	"github.com/o5h/opengles/gl"
+	"github.com/o5h/winapi"
+	"github.com/o5h/winapi/kernel32"
+	"github.com/o5h/winapi/user32"
 	"golang.org/x/sys/windows"
 )
 
