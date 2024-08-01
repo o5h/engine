@@ -42,6 +42,7 @@ func Create(title string, w, h int32) *context {
 		height: h,
 		Done:   make(chan bool, 1),
 	}
+	ctx.handle = cgo.NewHandle(ctx)
 
 	ctx.createWindow(w, h)
 	return ctx
