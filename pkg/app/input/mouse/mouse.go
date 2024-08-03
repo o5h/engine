@@ -1,5 +1,7 @@
 package mouse
 
+import "github.com/o5h/engine/pkg/core/signal"
+
 type Button int
 
 type Event struct {
@@ -23,3 +25,5 @@ const (
 	ActionRelease
 	ActionMove
 )
+
+var Events signal.Signal[Event]

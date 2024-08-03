@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
+	"github.com/o5h/engine/assets"
 	"github.com/o5h/engine/pkg/app"
 	"github.com/o5h/engine/pkg/app/input/keyboard"
 	"github.com/o5h/engine/pkg/app/input/mouse"
@@ -31,13 +31,13 @@ func (example *Example) OnCreate(ctx app.Context) {
 	example.rnd = &glx.Renderer{}
 	example.cam = glx.NewCamera()
 	example.cam.Viewport = glm.RectI{0, 0, 640, 480}
-	f, _ := os.Open("cube.stl")
-	example.mesh, _ = stl.Load(f)
+
+	example.mesh = assets.MustDecode(stl.Load, "bottle.stl")
 	material.Init()
 	example.light = &pointlight.Light{
 		Color: color.Yellow, Location: glm.Vec3{X: 10, Y: 10, Z: 10}}
 
-	example.keyboardCon = ctx.KeyboardEvents().Connect(func(e keyboard.Event) {
+	example.keyboardCon = keyboard.Events.Connect(func(e keyboard.Event) {
 		log.Println(e)
 		if e.Code == keyboard.CodeW {
 			example.cam.Pos.Y += 0.1

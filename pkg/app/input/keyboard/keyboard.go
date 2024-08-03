@@ -1,5 +1,7 @@
 package keyboard
 
+import "github.com/o5h/engine/pkg/core/signal"
+
 type Event struct {
 	Code      Code
 	Direction Direction
@@ -13,3 +15,5 @@ const (
 	Press   Direction = 1
 	Release Direction = 2
 )
+
+var Events = signal.Signal[Event]{Name: "keyboard"}

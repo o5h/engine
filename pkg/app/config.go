@@ -11,8 +11,4 @@ var DefaultConfig = Config{
 	Title:  "Example",
 }
 
-func WithTitle(name string) func(*Config) {
-	return func(c *Config) {
-		c.Title = name
-	}
-}
+func WithTitle(name string) func(*Config) { return func(c *Config) { c.Title = name } }

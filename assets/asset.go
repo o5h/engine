@@ -3,12 +3,17 @@ package assets
 import (
 	"io"
 	"io/fs"
+	"os"
 )
 
 type Decoder[T any] func(io.Reader) (T, error)
 type Encoder[T any] func(io.Writer, T) error
 
 var assetsFS fs.FS
+
+func init() {
+	assetsFS = os.DirFS("./")
+}
 
 func SetFS(f fs.FS) { assetsFS = f }
 
