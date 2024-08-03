@@ -114,10 +114,10 @@ func (ctx *windowsContext) onCreate(hWnd winapi.HWND) error {
 	}
 
 	//user32.SetWindowPos(hWnd, user32.HWND_TOP, 0, 0, ctx.Width, ctx.Height, user32.SWP_SHOWWINDOW)
-	user32.ShowWindow(hWnd, user32.SW_SHOW)
-	user32.UpdateWindow(hWnd)
-	user32.SetFocus(hWnd)
 	ctx.app.OnCreate(ctx)
+	user32.ShowWindow(hWnd, user32.SW_SHOW)
+	user32.SetFocus(hWnd)
+	user32.UpdateWindow(hWnd)
 	return err
 }
 
