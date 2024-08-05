@@ -1,6 +1,6 @@
 package mouse
 
-import "github.com/o5h/engine/pkg/core/signal"
+import "github.com/o5h/engine/signal"
 
 type Button int
 

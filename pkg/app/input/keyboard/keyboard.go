@@ -1,6 +1,6 @@
 package keyboard
 
-import "github.com/o5h/engine/pkg/core/signal"
+import "github.com/o5h/engine/signal"
 
 type Event struct {
 	Code      Code
