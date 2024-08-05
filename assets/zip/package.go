@@ -3,7 +3,6 @@ package zip
 import (
 	"archive/zip"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -11,7 +10,7 @@ import (
 )
 
 type Package struct {
-	info   map[int64]string
+	info   map[uint64]string
 	reader *zip.ReadCloser
 }
 
@@ -22,21 +21,27 @@ func BuildZipPackage(name string, zipName string) error {
 	}
 	defer infoFile.Close()
 	info := map[int64]string{}
-	yaml.NewDecoder(infoFile).Decode(&info)
+
+	err = yaml.NewDecoder(infoFile).Decode(&info)
+	if err != nil {
+		return err
+	}
 
 	zipFile, err := os.Create(zipName)
 	if err != nil {
 		return err
 	}
+	defer zipFile.Close()
 	zw := zip.NewWriter(zipFile)
-
 	dir := filepath.Dir(name)
-	addFileToZip(zw, dir, filepath.Base(name))
+	err = addFileToZip(zw, dir, filepath.Base(name))
+	if err != nil {
+		return err
+	}
 	for _, name := range info {
 		addFileToZip(zw, dir, name)
 	}
-	defer zw.Close()
-	return nil
+	return zw.Close()
 }
 
 func addFileToZip(zw *zip.Writer, dir, name string) error {
@@ -44,7 +49,7 @@ func addFileToZip(zw *zip.Writer, dir, name string) error {
 	if err != nil {
 		return err
 	}
-	data, err := ioutil.ReadFile(filepath.Join(dir, name))
+	data, err := os.ReadFile(filepath.Join(dir, name))
 	if err != nil {
 		return err
 	}
@@ -59,7 +64,7 @@ func OpenZipPackage(name string) (*Package, error) {
 		return nil, err
 	}
 	pkg := Package{
-		info:   map[int64]string{},
+		info:   map[uint64]string{},
 		reader: reader}
 	return &pkg, pkg.init()
 }
